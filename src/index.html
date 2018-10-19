@@ -1,0 +1,44 @@
+<HTML>
+<head>
+  <script>
+    console.log(navigator);
+    let audioStream;
+    let audioChunks = [];
+    navigator.mediaDevices.getUserMedia({audio: true})
+    .then(stream => {
+      console.log(stream);
+      audioStream = stream;
+    });
+
+    function startRecord() {
+      if (!audioStream) {
+        console.error('audio stream is not initilized');
+        return;
+      }
+
+      console.log('start recording');
+      const audioRecorder = new MediaRecorder(audioStream);
+      audioRecorder.start();
+      audioRecorder.addEventListener('dataavailable', e => {
+        audioChunks.push(event.data);
+      });
+
+      audioRecorder.addEventListener("stop", e => {
+        const audioBlob = new Blob(audioChunks);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        console.log('play');
+        audio.play();
+      })
+
+      setTimeout(() => {
+        audioRecorder.stop();
+      }, 3000);
+    }
+  </script>
+</head>
+<body>
+  Hello latency
+  <button onclick="startRecord()">Start Record</button>
+</body>
+</HTML>
