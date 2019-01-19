@@ -1,4 +1,5 @@
 import { Track } from './track.js';
+import TimeLine from './timeline.js';
 
 let audioStream;
 let audioChunks = [];
@@ -11,16 +12,17 @@ navigator.mediaDevices.getUserMedia({audio: true})
 var audioRecorder;
 const tracks = [new Track('Track 1')];
 let selectedTrack = 0;
+const STOPPED = 0;
+const PLAYING = 1;
+const RECORDING = 2;
+let status = STOPPED;
 
 function startRecord() {
   if (!audioStream) {
     console.error('audio stream is not initilized');
     return;
   }
-
   audioChunks = [];
-
-  console.log('start recording');
   audioRecorder = new MediaRecorder(audioStream);
   audioRecorder.start();
   audioRecorder.addEventListener('dataavailable', e => {
@@ -36,13 +38,18 @@ function startRecord() {
     const currentRecordingTrack = tracks[selectedTrack];
     currentRecordingTrack.recordedAt = new Date();
     currentRecordingTrack.audio = audio;
-
     audio.play();
-  })
+  });
 }
 
 function stopRecording() {
-  audioRecorder.stop();
+  if (status === RECORDING) {
+    audioRecorder.stop();
+  } else if (status === PLAYING) {
+    clearInterval(globalTimer);
+  }
+
+  status = STOPPED;
 }
 
 function refreshTrackList() {
@@ -67,6 +74,10 @@ function refreshTrackList() {
     const stopButton = document.createElement('button');
     stopButton.innerText = 'stop';
     stopButton.addEventListener('click', () => onStopTrackClicked(idx));
+
+    const muteButton = document.createElement('button');
+    muteButton.innerText = 'mute';
+    muteButton.addEventListener('click', () => onMuteTrackClicked(idx));
     
     trackElement.appendChild(playButton);
     trackElement.appendChild(stopButton);
@@ -88,7 +99,6 @@ function onPlayTrackClicked(trackNumber) {
   if (!currentTrack.audio) {
     console.log('Track ' + (trackNumber+ 1) + ' 녹음된 음원 없음');
   }
-
   currentTrack.audio.play();
 }
 
@@ -99,9 +109,27 @@ function onStopTrackClicked(trackNumber) {
 function onRecordTrackClicked() {
   startRecord();
 }
+let globalTimer;
+let positionInMilliSeconds = 0;
 
 function playAllTracks() {
+  status = PLAYING;
   tracks.filter(track => track.audio).forEach(track => track.audio.play());
+  globalTimer = setInterval(() => {
+    positionInMilliSeconds += 100;
+    const timeView = document.getElementsByClassName("current-time-view")[0];
+    timeView.innerText = timeStringFromMilliSeconds(positionInMilliSeconds);
+    timeline.setPosition(positionInMilliSeconds/1000);
+    timeline.draw();
+  }, 100);
+}
+
+function timeStringFromMilliSeconds(milliSeconds) {
+  const seconds = Math.floor(milliSeconds / 1000) % 60;
+  const minutes = Math.floor(milliSeconds / 60000) % 60;
+  const hour = Math.floor(milliSeconds / (1000 * 3600));
+  const time = [minutes, seconds].map(v => v.toString().padStart(2, '0')).join(':');
+  return [hour, time].join(':') + "." + (Math.floor(milliSeconds /100) % 10);
 }
 
 // TODO 녹음된 음원이 없는 트랙은 재생할 수 없다.
@@ -109,12 +137,20 @@ function playAllTracks() {
 // TODO 녹음 중에는 새로운 녹음을 시작할 수 없다.
 
 function newTrack() {
-  tracks.push(new Track('Track ' + (tracks.length + 1)));
+  tracks.push(new Track('Tracks ' + (tracks.length + 1)));
   refreshTrackList();
 }
 
 window.newTrack = newTrack;
 window.playAllTracks = playAllTracks;
 window.stopRecording = stopRecording;
+let timeline; 
 
 refreshTrackList();
+function initTimeline() {
+  const canvasForTimeline = document.getElementsByClassName('timeline')[0];
+  timeline = new TimeLine(canvasForTimeline);
+  timeline.draw();
+}
+
+initTimeline();
