@@ -1,8 +1,12 @@
 import { Track } from './track.js';
 import TimeLine from './timeline.js';
+import StopWatch from './stopwatch';
 
 let audioStream;
 let audioChunks = [];
+let stopWatch = new StopWatch();
+stopWatch.setUpdateHandler(onStopwatchUpdated);
+
 navigator.mediaDevices.getUserMedia({audio: true})
 .then(stream => {
   console.log(stream);
@@ -10,7 +14,7 @@ navigator.mediaDevices.getUserMedia({audio: true})
 });
 
 var audioRecorder;
-const tracks = [new Track('Track 1')];
+const tracks = [new Track('Channel 1')];
 let selectedTrack = 0;
 const STOPPED = 0;
 const PLAYING = 1;
@@ -18,11 +22,20 @@ const RECORDING = 2;
 let status = STOPPED;
 
 function startRecord() {
+  if (status === RECORDING) {
+    console.warn('can not record.');
+    return;
+  }
+
+  console.log('recording started');
   if (!audioStream) {
     console.error('audio stream is not initilized');
     return;
   }
   audioChunks = [];
+  const audioSnippet = {
+    startAt: stopWatch.getPosition()
+  };
   audioRecorder = new MediaRecorder(audioStream);
   audioRecorder.start();
   audioRecorder.addEventListener('dataavailable', e => {
@@ -30,26 +43,48 @@ function startRecord() {
   });
 
   audioRecorder.addEventListener("stop", e => {
+    console.info('Recording is stoping...');
+    audioSnippet.endAt = stopWatch.getPosition();
+    console.info(`snippet has been recorded at ${audioSnippet.startAt} - ${audioSnippet.endAt}.`);
     const audioBlob = new Blob(audioChunks);
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
   
     // update track with new recording
     const currentRecordingTrack = tracks[selectedTrack];
-    currentRecordingTrack.recordedAt = new Date();
+    currentRecordingTrack.recordedAt = Date.now();
+    audioSnippet.recordedAt = Date.now();
     currentRecordingTrack.audio = audio;
-    audio.play();
+    audioSnippet.audio = audio;
+    currentRecordingTrack.addAudioSnippet(audioSnippet);
+
+    stopWatch.stop();
+    console.info('Recording stoped');
   });
+
+  stopWatch.start();
+  status = RECORDING;
 }
 
 function stopRecording() {
+  console.info('Stop on channel clicked.');
   if (status === RECORDING) {
+    console.info('Stop recording');
+    status = STOPPED;
+    tracks.forEach(track => track.pause());
     audioRecorder.stop();
   } else if (status === PLAYING) {
-    clearInterval(globalTimer);
+    tracks.forEach(track => track.pause());
+    status = STOPPED;
+    stopWatch.stop();
+    stopWatch.reset();
   }
+}
 
+function pause() {
+  tracks.forEach(track => track.pause());
   status = STOPPED;
+  stopWatch.stop();
 }
 
 function refreshTrackList() {
@@ -96,10 +131,7 @@ function onTrackClicked(trackNumber) {
 
 function onPlayTrackClicked(trackNumber) {
   const currentTrack = tracks[trackNumber];
-  if (!currentTrack.audio) {
-    console.log('Track ' + (trackNumber+ 1) + ' 녹음된 음원 없음');
-  }
-  currentTrack.audio.play();
+  currentTrack.play();
 }
 
 function onStopTrackClicked(trackNumber) {
@@ -110,18 +142,23 @@ function onRecordTrackClicked() {
   startRecord();
 }
 let globalTimer;
-let positionInMilliSeconds = 0;
+
+function onStopwatchUpdated() {
+  const timeView = document.getElementsByClassName("current-time-view")[0];
+  timeView.innerText = timeStringFromMilliSeconds(stopWatch.getPosition());
+  timeline.setPosition(stopWatch.getPosition()/1000);
+  timeline.draw();
+
+  if (status === PLAYING) {
+    tracks.forEach(track => track.update(stopWatch.getPosition()));
+  }
+}
 
 function playAllTracks() {
+  console.info('Play all tracks clicked.');
   status = PLAYING;
-  tracks.filter(track => track.audio).forEach(track => track.audio.play());
-  globalTimer = setInterval(() => {
-    positionInMilliSeconds += 100;
-    const timeView = document.getElementsByClassName("current-time-view")[0];
-    timeView.innerText = timeStringFromMilliSeconds(positionInMilliSeconds);
-    timeline.setPosition(positionInMilliSeconds/1000);
-    timeline.draw();
-  }, 100);
+  tracks.forEach(track => track.play(stopWatch.getPosition()));
+  stopWatch.start();
 }
 
 function timeStringFromMilliSeconds(milliSeconds) {
@@ -137,13 +174,14 @@ function timeStringFromMilliSeconds(milliSeconds) {
 // TODO 녹음 중에는 새로운 녹음을 시작할 수 없다.
 
 function newTrack() {
-  tracks.push(new Track('Tracks ' + (tracks.length + 1)));
+  tracks.push(new Track('Channel ' + (tracks.length + 1)));
   refreshTrackList();
 }
 
 window.newTrack = newTrack;
 window.playAllTracks = playAllTracks;
 window.stopRecording = stopRecording;
+window.pause = pause;
 let timeline; 
 
 refreshTrackList();
