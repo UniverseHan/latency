@@ -38,9 +38,7 @@ function startRecord() {
   };
   audioRecorder = new MediaRecorder(audioStream);
   audioRecorder.start();
-  audioRecorder.addEventListener('dataavailable', e => {
-    audioChunks.push(event.data);
-  });
+  audioRecorder.addEventListener('dataavailable', e => audioChunks.push(event.data));
 
   audioRecorder.addEventListener("stop", e => {
     console.info('Recording is stoping...');
@@ -52,9 +50,7 @@ function startRecord() {
   
     // update track with new recording
     const currentRecordingTrack = tracks[selectedTrack];
-    currentRecordingTrack.recordedAt = Date.now();
     audioSnippet.recordedAt = Date.now();
-    currentRecordingTrack.audio = audio;
     audioSnippet.audio = audio;
     currentRecordingTrack.addAudioSnippet(audioSnippet);
 
@@ -82,8 +78,8 @@ function stopRecording() {
 }
 
 function pause() {
-  tracks.forEach(track => track.pause());
   status = STOPPED;
+  tracks.forEach(track => track.pause());
   stopWatch.stop();
 }
 
@@ -122,7 +118,7 @@ function refreshTrackList() {
 }
 
 function onTrackClicked(trackNumber) {
-  console.log((trackNumber+1) + ' Track click!!!');
+  console.log((trackNumber+1) + ' Track click.');
   selectedTrack = trackNumber;
 
   const selectedTrackElement = document.getElementById('selectedTrack');
@@ -141,7 +137,6 @@ function onStopTrackClicked(trackNumber) {
 function onRecordTrackClicked() {
   startRecord();
 }
-let globalTimer;
 
 function onStopwatchUpdated() {
   const timeView = document.getElementsByClassName("current-time-view")[0];

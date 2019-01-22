@@ -22,20 +22,122 @@
       float: right;
       width: 400;
       height: 100%;
-      background-color: #2196F3;
+      background-color: #71b6F3;
     }
+
+    .chat-box {
+      box-sizing: border-box;
+      padding: 1px;
+    }
+
+    .chat-box .message-container {
+      border: 1px solid white;
+      height: calc(100% - 30px);
+      box-sizing: border-box;
+    }
+    .chat-box ul {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    .chat-box li {
+      list-style-type: none;
+      margin-bottom: 10px;
+      margin-left: 2px;
+      overflow: hidden;
+      min-height: 51px;
+    }
+    
     .container {
       margin: 5px;
+      overflow: hidden;
     }
 
     body > div{
       border: 1px solid red;
     }
+
+    .chat-box .message-input {
+      height: 30px;
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+    }
+    .chat-box .avatar {
+      width: 50px;
+      height: 50px;
+      background-color: green;
+      float: left;
+    }
+
+    .chat-box .written-time {
+      color: #787778;
+      margin-left:5px;
+      font-size: 12px;
+    }
+
+    .chat-box .message-box {
+      overflow: hidden;
+    }
+
+    .chat-box .message-box p {
+      margin: 0px;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
+  <div class="side-bar chat-box">
+    <ul class="message-container">
+      <li>
+        <div class="avatar">
+        </div>
+        <div class="message-box">
+          <p><b>Nick name</b><span class="written-time">오후 12:00</span></p>
+          <p>우허허허 연주를 시작해 볼까요?</p>
+        </div>
+      </li>
+      <li>
+        <div class="avatar">
+        </div>
+        <div class="message-box">
+          <p><b>Nick name</b><span class="written-time">오후 12:05</span></p>
+          <p>오키요~</p>
+        </div>
+      </li>
+      <li>
+        <div class="avatar">
+        </div>
+        <div class="message-box">
+          <p><b>Nick name</b><span class="written-time">오후 12:10</span></p>
+          <p>우리 이번에 악기 연주 하려면 생각할 점이 아주 많을것 같아. 일단을 곡들좀 들어보고 내일 장소 정해지면 장소에서 만나서 어떻게 연주할지 한번 더 이야기 해보는것으로 하자</p>
+        </div>
+      </li>
+      <li>
+        <div class="avatar">
+        </div>
+        <div class="message-box">
+          <p><b>Nick name</b><span class="written-time">오후 1:00 PM</span></p>
+          <p>우허허허 연주를 시작해 볼까요?</p>
+        </div>
+      </li>
+      <li>
+        <div class="avatar">
+        </div>
+        <div class="message-box">
+          <p><b>Nick name</b><span class="written-time">12:00 PM</span></p>
+          <p>우허허허 연주를 시작해 볼까요?</p>
+        </div>
+      </li>
+    </ul>
+    <input type="textarea" class="message-input">
+    </input>
+  </div> 
   <div class="container">
-    <p class="current-time-view">Hello latency</p>
+    <p class="current-time-view" style="padding: 3px;">
+      <span>Hello latency</span>
+      <span style="float:right;">130 BPM</span>
+    </p>
     <div>
       <canvas class="timeline" style="width: 100%; height: 30px" width="500" height="20"></canvas>
       <span id='selectedTrack'></span>
@@ -49,7 +151,6 @@
       <div id="trackList"></div>
     </div>
   </div>
-  <div class="side-bar"></div> 
   <script src="./dist/bundle.js" type="text/javascript"></script>
 </body>
 </HTML>
